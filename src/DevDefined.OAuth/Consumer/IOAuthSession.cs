@@ -26,6 +26,7 @@
 
 using System;
 using System.Collections;
+using System.Threading.Tasks;
 using DevDefined.OAuth.Framework;
 
 namespace DevDefined.OAuth.Consumer
@@ -43,14 +44,19 @@ namespace DevDefined.OAuth.Consumer
 		IConsumerRequest Request(IToken accessToken);
 		IToken GetRequestToken();
 		IToken GetRequestToken(string method);
+        Task<IToken> GetRequestTokenAsync();
+        Task<IToken> GetRequestTokenAsync(string method);
 		IToken ExchangeRequestTokenForAccessToken(IToken requestToken);
 		IToken ExchangeRequestTokenForAccessToken(IToken requestToken, string verificationCode);
 		IToken ExchangeRequestTokenForAccessToken(IToken requestToken, string method, string verificationCode);
-    IToken GetAccessTokenUsingXAuth(string authMode, string username, string password);
-    IConsumerRequest BuildRequestTokenContext(string method);
+        Task<IToken> ExchangeRequestTokenForAccessTokenAsync(IToken requestToken);
+        Task<IToken> ExchangeRequestTokenForAccessTokenAsync(IToken requestToken, string verificationCode);
+        Task<IToken> ExchangeRequestTokenForAccessTokenAsync(IToken requestToken, string method, string verificationCode);
+        IToken GetAccessTokenUsingXAuth(string authMode, string username, string password);
+        IConsumerRequest BuildRequestTokenContext(string method);
 		IConsumerRequest BuildExchangeRequestTokenForAccessTokenContext(IToken requestToken, string method, string verificationCode);
-    IConsumerRequest BuildAccessTokenContext(string method, string xAuthMode, string xAuthUsername, string xAuthPassword);
-    string GetUserAuthorizationUrlForToken(IToken token, string callbackUrl);
+        IConsumerRequest BuildAccessTokenContext(string method, string xAuthMode, string xAuthUsername, string xAuthPassword);
+        string GetUserAuthorizationUrlForToken(IToken token, string callbackUrl);
 		string GetUserAuthorizationUrlForToken(IToken token);
 		IOAuthSession WithFormParameters(IDictionary dictionary);
 		IOAuthSession WithFormParameters(object anonymousClass);

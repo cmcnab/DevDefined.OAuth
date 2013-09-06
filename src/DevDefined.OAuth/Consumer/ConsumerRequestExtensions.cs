@@ -29,6 +29,7 @@ using System.Collections;
 using System.Collections.Specialized;
 using System.Net;
 using System.Text;
+using System.Threading.Tasks;
 using DevDefined.OAuth.Framework;
 using DevDefined.OAuth.Utility;
 
@@ -178,6 +179,24 @@ namespace DevDefined.OAuth.Consumer
 				throw Error.FailedToParseResponse(request.ToString());
 			}
 		}
+
+        public static async Task<T> SelectAsync<T>(this IConsumerRequest request, Func<NameValueCollection, T> selectFunc)
+        {
+            try
+            {
+                var values = await request.ToBodyParametersAsync();
+                return selectFunc(values);
+            }
+            catch (ArgumentNullException argumentException)
+            {
+                if (argumentException.Message.Contains("Value cannot be null.\r\nParameter name: str"))
+                {
+                    throw Error.ExperiencingIssueWithCreatingUriDueToMissingAppConfig(argumentException);
+                }
+
+                throw Error.FailedToParseResponse(request.ToString());
+            }
+        }
 
 		public static IConsumerRequest IncludeRequestBodyHash(this IConsumerRequest request)
 		{

@@ -27,6 +27,7 @@
 using System;
 using System.Collections;
 using System.Collections.Specialized;
+using System.Threading.Tasks;
 using System.Web;
 using DevDefined.OAuth.Framework;
 using DevDefined.OAuth.Utility;
@@ -149,6 +150,11 @@ namespace DevDefined.OAuth.Consumer
 			return GetRequestToken("GET");
 		}
 
+        public Task<IToken> GetRequestTokenAsync()
+        {
+            return GetRequestTokenAsync("GET");
+        }
+
 		public IToken ExchangeRequestTokenForAccessToken(IToken requestToken)
 		{
 			return ExchangeRequestTokenForAccessToken(requestToken, "GET", null);
@@ -175,6 +181,33 @@ namespace DevDefined.OAuth.Consumer
 
 			return token;
 		}
+
+        public Task<IToken> ExchangeRequestTokenForAccessTokenAsync(IToken requestToken)
+        {
+            return ExchangeRequestTokenForAccessTokenAsync(requestToken, "GET", null);
+        }
+
+        public Task<IToken> ExchangeRequestTokenForAccessTokenAsync(IToken requestToken, string verificationCode)
+        {
+            return ExchangeRequestTokenForAccessTokenAsync(requestToken, "GET", verificationCode);
+        }
+
+        public async Task<IToken> ExchangeRequestTokenForAccessTokenAsync(IToken requestToken, string method, string verificationCode)
+        {
+            TokenBase token = await BuildExchangeRequestTokenForAccessTokenContext(requestToken, method, verificationCode)
+                .SelectAsync(collection =>
+                        new TokenBase
+                        {
+                            ConsumerKey = requestToken.ConsumerKey,
+                            Token = ParseResponseParameter(collection, Parameters.OAuth_Token),
+                            TokenSecret = ParseResponseParameter(collection, Parameters.OAuth_Token_Secret),
+                            SessionHandle = ParseResponseParameter(collection, Parameters.OAuth_Session_Handle)
+                        });
+
+            AccessToken = token;
+
+            return token;
+        }
 
 	  public IToken GetAccessTokenUsingXAuth(string authMode, string username, string password)
       {
@@ -352,6 +385,30 @@ namespace DevDefined.OAuth.Consumer
 			       		TokenSecret = results.TokenSecret
 			       	};
 		}
+
+        public async Task<IToken> GetRequestTokenAsync(string method)
+        {
+            var results = await BuildRequestTokenContext(method).SelectAsync(collection =>
+                                                                  new
+                                                                  {
+                                                                      ConsumerContext.ConsumerKey,
+                                                                      Token = ParseResponseParameter(collection, Parameters.OAuth_Token),
+                                                                      TokenSecret = ParseResponseParameter(collection, Parameters.OAuth_Token_Secret),
+                                                                      CallackConfirmed = WasCallbackConfimed(collection)
+                                                                  });
+
+            if (!results.CallackConfirmed && CallbackMustBeConfirmed)
+            {
+                throw Error.CallbackWasNotConfirmed();
+            }
+
+            return new TokenBase
+            {
+                ConsumerKey = results.ConsumerKey,
+                Token = results.Token,
+                TokenSecret = results.TokenSecret
+            };
+        }
 
 		static bool WasCallbackConfimed(NameValueCollection parameters)
 		{

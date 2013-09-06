@@ -27,6 +27,7 @@
 using System;
 using System.Collections.Specialized;
 using System.Net;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 using DevDefined.OAuth.Framework;
 
@@ -42,10 +43,13 @@ namespace DevDefined.OAuth.Consumer
 		int? Timeout { get; set; }
 		string RequestBody { get; set; }
 		XDocument ToDocument();
-      byte[] ToBytes();
-      HttpWebRequest ToWebRequest();
+        Task<XDocument> ToDocumentAsync();
+        byte[] ToBytes();
+        HttpWebRequest ToWebRequest();
 		HttpWebResponse ToWebResponse();
+        Task<HttpWebResponse> ToWebResponseAsync();
 		NameValueCollection ToBodyParameters();
+        Task<NameValueCollection> ToBodyParametersAsync();
 		RequestDescription GetRequestDescription();
 		IConsumerRequest SignWithoutToken();
 		IConsumerRequest SignWithToken();

@@ -28,6 +28,7 @@ using System;
 using System.Collections.Specialized;
 using System.IO;
 using System.Net;
+using System.Threading.Tasks;
 using System.Web;
 using System.Xml.Linq;
 using DevDefined.OAuth.Framework;
@@ -66,6 +67,11 @@ namespace DevDefined.OAuth.Consumer
 		{
 			return XDocument.Parse(ToString());
 		}
+
+        public async Task<XDocument> ToDocumentAsync()
+        {
+            return XDocument.Parse(await ToStringAsync());
+        }
 
 		public byte[] ToBytes()
 		{
@@ -143,6 +149,27 @@ namespace DevDefined.OAuth.Consumer
 			}
 		}
 
+        public async Task<HttpWebResponse> ToWebResponseAsync()
+        {
+            try
+            {
+                HttpWebRequest request = ToWebRequest();
+                var response = await request.GetResponseAsync();
+                return (HttpWebResponse)response;
+            }
+            catch (WebException webEx)
+            {
+                OAuthException authException;
+
+                if (WebExceptionHelper.TryWrapException(Context, webEx, out authException, ResponseBodyAction))
+                {
+                    throw authException;
+                }
+
+                throw;
+            }
+        }
+
 		public NameValueCollection ToBodyParameters()
 		{
 			try
@@ -168,6 +195,32 @@ namespace DevDefined.OAuth.Consumer
 				throw Error.RequestFailed(webEx);
 			}
 		}
+
+        public async Task<NameValueCollection> ToBodyParametersAsync()
+        {
+            try
+            {
+                string encodedFormParameters = await ToStringAsync();
+
+                if (ResponseBodyAction != null)
+                {
+                    ResponseBodyAction(encodedFormParameters);
+                }
+
+                try
+                {
+                    return HttpUtility.ParseQueryString(encodedFormParameters);
+                }
+                catch (ArgumentNullException)
+                {
+                    throw Error.FailedToParseResponse(encodedFormParameters);
+                }
+            }
+            catch (WebException webEx)
+            {
+                throw Error.RequestFailed(webEx);
+            }
+        }
 
 		public IConsumerRequest SignWithoutToken()
 		{
@@ -275,6 +328,17 @@ namespace DevDefined.OAuth.Consumer
 
 			return ResponseBody;
 		}
+
+        public async Task<string> ToStringAsync()
+        {
+            if (string.IsNullOrEmpty(ResponseBody))
+            {
+                var response = await ToWebResponseAsync();
+                ResponseBody = response.ReadToEnd();
+            }
+
+            return ResponseBody;
+        }
 
 		void EnsureRequestHasNotBeenSignedYet()
 		{
